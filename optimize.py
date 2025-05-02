@@ -69,7 +69,7 @@ class Optimizer():
                 # Compute Hessian and gradient
                 # This is intentionally slow to demonstrate why approximate
                 # algorithms are more useful 
-                hess = scipy.optimize.approx_hessian(x, fun)
+                hess = scipy.differentiate.hessian(fun, x).ddf
                 if np.linalg.det(hess) == 0:
                     # If Hessian is singular, add small value to diagonal
                     hess += np.eye(len(x)) * 1e-6
@@ -121,7 +121,7 @@ def rosenbrock(x):
 
 if __name__ == "__main__":
     opt = Optimizer()
-    guess = np.array([0.5, 0.5])
+    guess = np.array([75, 0.5])
     
     # Simple quadratic function
     def test_func(xy):
@@ -129,9 +129,9 @@ if __name__ == "__main__":
         return (x - 1)**2 + (y - 2)**2 + 3
     
     t0 = time.time()
-    opt.optimize(test_func, guess, params={"method": "BFGS"})
+    opt.optimize(test_func, guess, params={"method": "newton"})
     print(f"Time: {time.time() - t0}")
-    print(f"Final point: {opt.x_history[-1]}")
+    print(f"Final point: {opt.x_history}")
     print(f"Final value: {test_func(opt.x_history[-1])}")
     
 
