@@ -36,7 +36,7 @@ class Optimizer():
                 grad = scipy.optimize.approx_fprime(x, fun, 1e-8)
                 
                 # Perform gradient descent step
-                x_new = x - alpha * grad
+                x_new = x - alpha * grad # ADD LINE SEARCH TO GET STEP SIZE
                 val_new = fun(x_new)
                 
                 # Save the new point
@@ -69,7 +69,7 @@ class Optimizer():
                 # Compute Hessian and gradient
                 # This is intentionally slow to demonstrate why approximate
                 # algorithms are more useful 
-                hess = scipy.optimize.approx_hessian(x, fun)
+                hess = scipy.differentiate.hessian(fun, x)
                 if np.linalg.det(hess) == 0:
                     # If Hessian is singular, add small value to diagonal
                     hess += np.eye(len(x)) * 1e-6

@@ -18,15 +18,27 @@ algorithm_descriptions = {
 
 # Layout for the app
 app.layout = html.Div([
-    de.EventListener(
-        id='listener',
-        events=[{'event': 'keydown', 'props': ['key', 'keyCode']}],
-        style={'height': '100%', 'width': '100%', 'position': 'fixed', 'z-index': 1}
-    ),
+
+    # Title and toggle view button
     html.Div([
+        html.H1("Interactive 3D Function Plotter", style={'margin': '0'}),
+        html.Button("Switch View", id='toggle-view', n_clicks=0)
+    ], style={'display': 'flex', 'justifyContent': 'space-between', 'alignItems': 'center'}),
+
+    dcc.Store(id='view-mode', data='surface'),
+
+    # Event listener and graph for first view
+
     html.Div([
-        dcc.Graph(id='surface-plot', style={'height': '80vh', 'width': '100%'})
-        ], style={'height': '80vh', 'width': '70%', 'position': 'relative', 'z-index': 2, 'display': 'inline-block'}),
+        html.Div([
+            de.EventListener(
+                id='listener',
+                events=[{'event': 'keydown', 'props': ['key']}],
+                style={'height': '100%'}
+            ),
+            dcc.Graph(id='surface-plot', style={'height': '80vh', 'width': '100%'}),
+        ], id='first-view', style={'height': '80vh', 'width': '70%', 'position': 'relative', 'z-index': 2, 'display': 'inline-block'}),  # initially visible
+
         html.Div([
             html.H3("Optimization Settings", style={'textAlign': 'center'}),
             html.Label("Select Algorithm:"),
@@ -79,15 +91,53 @@ app.layout = html.Div([
             ])
         ], style={'height': '80vh', 'width': '30%', 'position': 'relative', 'z-index': 2, 
                   'display': 'inline-block', 'verticalAlign': 'top', 'padding': '0 20px'})
-    ], style={'display': 'flex', 'justifyContent': 'center', 'width': '100%'}),
+    ], id='first-view-controls', style={'display': 'flex','flexDirection':'row','justifyContent': 'flex-start', 'width': '100%'}),
+
+        html.Div(id='second-view', children=[
+            html.Div([
+                html.Label("Number of Dimensions:"),
+                dcc.Input(id='num-dimensions', type='number', value=10, min=1),
+                html.Label("Select Function:"),
+                dcc.Dropdown(
+                    id='function-selector',
+                    options=[
+                        {'label': 'Rosenbrock', 'value': 'rosenbrock'},
+                        {'label': 'Sphere', 'value': 'sphere'},
+                        {'label': 'Rastrigin', 'value': 'rastrigin'}
+                    ],
+                    value='rosenbrock'
+                ),
+                html.Label("Tolerance:"),
+                dcc.Input(id='tolerance', type='number', value=1e-6, step=1e-7),
+
+                html.Label("Max Iterations:"),
+                dcc.Input(id='max-iterations', type='number', value=100, min=1),
+
+                html.Button("Run Optimizer", id='run-optimizer', n_clicks=0)
+            ], style={'marginBottom': '1em'}),
+
+                html.Div("Optimizer differences really start to matter with high-dimensional functions, \
+                         but it's hard to view those as easily for the purpose of demonstration. Here, we've \
+                         visualized how each variable converges towards its optimal value. By clicking \"Run Optimization\", \
+                         the selected optimization algorithm will run on the selected test function in the given number of dimensions. \
+                         Every column of the heatmap below represents a variable, and every row represents a single guess for. Lower \
+                         values indicate the value is closer to its ideal value at the nearest local optimum.", style={"fontSize": "14px","text-align":"center"}),
+
+            html.Div([
+                dcc.Graph(id='optimizer-progress-1', style={'width': '50%'}),
+                dcc.Graph(id='optimizer-progress-2', style={'width': '50%'})
+            ], style={'display': 'flex', 'flexDirection': 'row'})
+        ], style={'display': 'none'}),  # Hidden by default
+
     dcc.Store(id='saved-points', data=[]),
     dcc.Store(id='optimization-results', data=None),
     dcc.Store(id='hovered-point', data=None),
     dcc.Store(id='is-optimizing', data=False),
     dcc.Store(id='current-function', data="(x-1)**2 + (y-2)**2 + 3"),  # Store the current function
     html.Div(id='output'),
+
     html.Div([
-        html.H1("Interactive 3D Function Optimizer", style={'textAlign': 'center'}),
+        html.H3("Function Parameters", style={'textAlign': 'center'}),
         html.Div([
             html.Div([
                 html.Label("Function (x,y):"),
@@ -107,8 +157,10 @@ app.layout = html.Div([
         ], style={'width': '100%', 'display': 'flex', 'justifyContent': 'space-between'}),
         html.Button('Update Plot', id='submit-button', n_clicks=0, 
                     style={'position': 'relative', 'z-index': 3, 'margin': '10px auto', 'display': 'block'})
-    ], style={'position': 'relative', 'z-index': 3, 'textAlign': 'center', 'margin': '20px auto', 'width': '80%'})
-])
+    ], id='first-view-options',style={'position': 'relative', 'z-index': 3, 'textAlign': 'center', 'margin': '20px auto', 'width': '80%'}),
+
+
+    ])
 
 # Store the current function for reuse in callbacks
 @app.callback(
@@ -145,7 +197,7 @@ def update_input_feedback(event, function, x_range, y_range, n_clicks,
             html.P("Please wait while the algorithm runs. This may take a few seconds.")
         ])
     
-    if trigger_id == 'listener' and event and event.get('key') == ' ':
+    if trigger_id == 'listener' and event and event.get('key') == 'w':
         if hovered_point:
             return html.Div([
                 html.P("Space key pressed! ✓", style={'color': 'green'}),
@@ -566,7 +618,7 @@ def save_point_and_optimize(event, n_clicks, hovered_point, saved_points,
         return saved_points, optimization_results, dash.no_update, False
     
     # Handle space key press to save point and run optimization
-    if trigger_id == 'listener' and event and event.get('key') == ' ' and hovered_point:
+    if trigger_id == 'listener' and event and event.get('key') == 'w' and hovered_point:
         print("Space key pressed and hovered point exists")  # Debug print
         # Set is_optimizing to True immediately
         is_optimizing = True
@@ -641,6 +693,45 @@ def save_point_and_optimize(event, n_clicks, hovered_point, saved_points,
     
     # If no trigger matched, return current values
     return dash.no_update, dash.no_update, dash.no_update, dash.no_update
+
+@app.callback(
+    [Output('optimizer-progress-1', 'figure'),
+     Output('optimizer-progress-2', 'figure')],
+    Input('submit-button', 'n_clicks'),
+    State('function-input', 'value')
+)
+def update_optimizer_views(n_clicks, function_str):
+    # Simulate optimizer guesses
+    guesses = np.random.rand(30, 10)
+    optimum = np.linspace(0, 1, 10)
+    distances = np.abs(guesses - optimum)
+    normalized = distances / np.max(distances)
+
+    fig1 = go.Figure(data=[go.Heatmap(z=normalized, colorscale='Viridis')])
+    fig1.update_layout(title="Distance to Optimum per Variable")
+
+    errors = np.sum(distances, axis=1)
+    fig2 = go.Figure(data=[go.Scatter(y=errors, mode='lines+markers')])
+    fig2.update_layout(title="Total Error per Step")
+
+    return fig1, fig2
+
+
+@app.callback(
+    [Output('first-view', 'style'),
+     Output('second-view', 'style'),
+     Output('view-mode', 'data'),
+     Output('first-view-controls', 'style'),
+     Output('first-view-options', 'style')],
+    Input('toggle-view', 'n_clicks'),
+    State('view-mode', 'data')
+)
+def toggle_views(n_clicks, current_mode):
+    if current_mode == 'surface':
+        return {'display': 'none'}, {'display': 'block'}, 'optimizer', {'display': 'none'}, {'display': 'none'}
+    else:
+        return {'display': 'block'}, {'display': 'none'}, 'surface', {'display': 'flex','flexDirection':'row','justifyContent': 'flex-start', 'width': '100%'}, {'display': 'flex'}
+
 
 # Run the app
 if __name__ == '__main__':
