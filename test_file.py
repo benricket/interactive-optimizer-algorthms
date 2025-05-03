@@ -4,6 +4,12 @@ import dash_extensions as de
 import plotly.graph_objs as go
 import numpy as np
 from optimize import Optimizer
+from threading import Thread
+import time
+
+optimizer_running = False
+optimizer_results = []
+opt = Optimizer()
 
 # Create the Dash app
 app = dash.Dash(__name__, 
@@ -25,7 +31,11 @@ app.layout = html.Div([
         html.Button("Switch View", id='toggle-view', n_clicks=0)
     ], style={'display': 'flex', 'justifyContent': 'space-between', 'alignItems': 'center'}),
 
+    dcc.Interval(id='update-interval', interval=1000, n_intervals=0),  # every 500 ms
     dcc.Store(id='view-mode', data='surface'),
+    dcc.Store(id='heatmap',data=[[0]]),
+    dcc.Store(id='x-history',data=opt.x_history),
+    dcc.Store(id='cost-history',data=opt.cost_history),
 
     # Event listener and graph for first view
 
@@ -120,7 +130,7 @@ app.layout = html.Div([
                          but it's hard to view those as easily for the purpose of demonstration. Here, we've \
                          visualized how each variable converges towards its optimal value. By clicking \"Run Optimization\", \
                          the selected optimization algorithm will run on the selected test function in the given number of dimensions. \
-                         Every column of the heatmap below represents a variable, and every row represents a single guess for. Lower \
+                         Every column of the heatmap below represents a variable, and every row represents a single optimizer guess. Lower \
                          values indicate the value is closer to its ideal value at the nearest local optimum.", style={"fontSize": "14px","text-align":"center"}),
 
             html.Div([
@@ -695,26 +705,88 @@ def save_point_and_optimize(event, n_clicks, hovered_point, saved_points,
     return dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
 @app.callback(
-    [Output('optimizer-progress-1', 'figure'),
-     Output('optimizer-progress-2', 'figure')],
-    Input('submit-button', 'n_clicks'),
-    State('function-input', 'value')
+    Input('run-optimizer', 'n_clicks'),
+    [State('function-selector', 'value'),
+     State('tolerance','value'),
+     State('max-iterations','value'),
+     State('num-dimensions','value'),
+     State('x-history','value'),
+     State('cost-history','value')],
+     prevent_initial_call=True
 )
-def update_optimizer_views(n_clicks, function_str):
+def start_optimizer_heatmap(n_clicks, function_type,tol,max_iter,num_dims,x_history,cost_history):
+    
+    global optimizer_results, optimizer_running
+    print(f"HI,{optimizer_running}")
+    if not optimizer_running:
+        optimizer_results = []
+
+        algorithm = "newton" #################
+
+        x0 = np.random.uniform(low=-5,high=5,size=(num_dims))
+        params = {
+            "method":algorithm,
+            "max_iters":max_iter,
+            "tol":tol
+        }
+
+        def optimizer_thread():
+            global optimizer_running, optimizer_results
+            print("hello again")
+            if not optimizer_running:
+                optimizer_running = True
+                #print(f"x0 before opt: {x0}")
+                opt.optimize_strict_fun(fun_name=function_type,x0=x0,params=params)
+            optimizer_running = False
+
+        Thread(target=optimizer_thread).start()
+
     # Simulate optimizer guesses
-    guesses = np.random.rand(30, 10)
-    optimum = np.linspace(0, 1, 10)
-    distances = np.abs(guesses - optimum)
-    normalized = distances / np.max(distances)
+    #guesses = np.random.uniform(low=-5,high=5,size=(30, 10))
+    #optimum = np.linspace(0, 1, 10)
+    #distances = np.abs(guesses - optimum)
+    #normalized = distances / np.max(distances)
 
-    fig1 = go.Figure(data=[go.Heatmap(z=normalized, colorscale='Viridis')])
-    fig1.update_layout(title="Distance to Optimum per Variable")
+    #fig1 = go.Figure(data=[go.Heatmap(z=normalized, colorscale='Viridis')])
+    #fig1.update_layout(title="Distance to Optimum per Variable")
+    #fig1.update_xaxes(title_text="Dimension")
+    #fig1.update_yaxes(title_text="Iteration Number")
 
-    errors = np.sum(distances, axis=1)
-    fig2 = go.Figure(data=[go.Scatter(y=errors, mode='lines+markers')])
-    fig2.update_layout(title="Total Error per Step")
 
-    return fig1, fig2
+    #errors = np.sum(distances, axis=1)
+    #fig2 = go.Figure(data=[go.Scatter(y=errors, mode='lines+markers')])
+    #fig2.update_layout(title="Total Error per Step")
+
+    #return fig1, fig2
+
+@app.callback(
+    [Output('optimizer-progress-1','figure'),
+     Output('optimizer-progress-2', 'figure')],
+     Input('update-interval','n_intervals'),
+     State('num-dimensions','value')
+)
+def display_heatmap(n_intervals,num_dims):
+
+    x_history = opt.x_history
+    if x_history is None or len(x_history) == 0:
+        x_history = [0 for _ in range(num_dims)]
+    else:
+        heatmap = np.array(x_history)
+        print(f"heatmap shape: {heatmap.shape}")
+        optimum = np.zeros((1,heatmap.shape[1]))
+        distances = np.abs(heatmap - optimum)
+
+        fig1 = go.Figure(data=[go.Heatmap(z=distances, colorscale='Viridis')])
+        fig1.update_layout(title="Distance to Optimum per Variable")
+        fig1.update_xaxes(title_text="Dimension")
+        fig1.update_yaxes(title_text="Iteration Number")
+
+        errors = np.sum(distances, axis=1)
+        print(f"err: {errors}")
+        fig2 = go.Figure(data=[go.Scatter(y=errors, mode='lines+markers')])
+        fig2.update_layout(title="Total Error per Step")
+
+        return fig1, fig2
 
 
 @app.callback(

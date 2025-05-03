@@ -8,6 +8,16 @@ class Optimizer():
         self.cost_history = []
         self.x_history = []
 
+    def optimize_strict_fun(self, fun_name, x0, params):
+        """
+        Perform optimization on a subset of high-dimensional functions
+        """
+        x0 = np.array(x0)
+        if fun_name == "rosenbrock":
+            self.optimize(rosenbrock,x0,params)
+        elif fun_name == "sphere":
+            self.optimize(sphere,x0,params)
+
     def optimize(self, fun, x0, params):
         """
         Perform optimization on a given cost function from a given guess.
@@ -69,16 +79,22 @@ class Optimizer():
                 # Compute Hessian and gradient
                 # This is intentionally slow to demonstrate why approximate
                 # algorithms are more useful 
-                hess = scipy.differentiate.hessian(fun, x)
+                grad = scipy.optimize.approx_fprime(x, fun)
+                if np.linalg.norm(grad) < tol:
+                    print("Stopping due to gradient tolerance!")
+                    break
+
+                hess = scipy.differentiate.hessian(fun, x).ddf
+                #print(f"Hess: {hess}")
                 if np.linalg.det(hess) == 0:
                     # If Hessian is singular, add small value to diagonal
                     hess += np.eye(len(x)) * 1e-6
                     
                 hess_inv = np.linalg.inv(hess)
-                grad = scipy.optimize.approx_fprime(x, fun)
 
                 # Perform Newton's method
-                x_new = x - hess_inv @ grad
+                gamma = 0.5
+                x_new = x - gamma * hess_inv @ grad
                 val_new = fun(x_new)
                 
                 # Save the new point
@@ -98,30 +114,39 @@ class Optimizer():
 
         elif method == "BFGS":
             ans = scipy.optimize.minimize(fun, x0, options=options, method="BFGS", tol=tol, callback=self.callback)
+            x = ans.x
             print(f"BFGS optimization completed in {ans.nit} iterations")
         else:
             print(f"Method {method} not implemented.")
+        
+        self.x_history.append(x)
 
     def callback(self, x, *args):
         """
         Callback function to add guess to history
         """
-        self.x_history.append(x.copy())
-        return False  # Continue optimization
+        self.x_history.append(x.copy().tolist())
+        print(x)
+        self.cost_history.append([0])
 
     def callback_newton(self, x, val):
         """
         Callback function to add guess to history
         """
         self.cost_history.append(val)
-        self.x_history.append(x.copy())
+        print(x)
+        self.x_history.append(x.copy().tolist())
 
 def rosenbrock(x):
     return scipy.optimize.rosen(x)
 
+def sphere(x):
+    print(f"sphere: {np.asarray(np.sum(x**4))}")
+    return np.asarray(np.sum(x**4))
+
 if __name__ == "__main__":
     opt = Optimizer()
-    guess = np.array([0.5, 0.5])
+    guess = np.array([0 for _ in range(50)])
     
     # Simple quadratic function
     def test_func(xy):
@@ -129,10 +154,10 @@ if __name__ == "__main__":
         return (x - 1)**2 + (y - 2)**2 + 3
     
     t0 = time.time()
-    opt.optimize(test_func, guess, params={"method": "BFGS"})
+    opt.optimize(rosenbrock, guess, params={"method": "BFGS"})
     print(f"Time: {time.time() - t0}")
     print(f"Final point: {opt.x_history[-1]}")
-    print(f"Final value: {test_func(opt.x_history[-1])}")
+    print(f"Final value: {rosenbrock(opt.x_history[-1])}")
     
 
 
