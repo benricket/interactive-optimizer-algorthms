@@ -58,7 +58,7 @@ $$
 Generalized for higher-dimensional inputs, the same approximation becomes:
 
 $$
-f(\mathbf{x} + \mathbf{d}) = f(\mathbf{x}) + \nabla f(\mathbf{x})^\top \mathbf{d} + 0.5\, \mathbf{d}^\top \mathbf{H} \mathbf{d}
+f(\mathbf{x} + \mathbf{d}) = f(\mathbf{x}) + \nabla f(\mathbf{x})^\top \mathbf{d} + 0.5\ \mathbf{d}^\top \mathbf{H} \mathbf{d}
 $$
 
 for a step in direction $\mathbf{d}$ from $\mathbf{x}$. Here, the matrix $\mathbf{H}$ represents the Hessian matrix,
@@ -94,21 +94,21 @@ process. For a large matrix, it isn't particularly feasible. Therefore, quasi-Ne
 using an approximation to the inverse Hessian that can be more efficiently computed.
 
 A reasonable goal for these methods is that the objective function approximation match the gradient of the objective function both
-at the initial guess $f(\mathbf{x}_k + \mathbf{d})$, as well as the next guess in the algorithm progress, 
-$f(\mathbf{x}_{k+1} + \mathbf{d})$. This is equivalent to asking the approximation $m(\mathbf{d})$ have a gradient
-that matches the objective function gradient for $\mathbf{d}_{k+1} = 0$ as well as $\mathbf{d}_{k+1} = - \gamma \mathbf{d}_k$. In other words, in
+at the initial guess $f(\mathbf{x}\_k+\mathbf{d})$, as well as the next guess in the algorithm progress, 
+$f(\mathbf{x}\_{k+1} + \mathbf{d})$. This is equivalent to asking that the approximation $m(\mathbf{d})$ have a gradient
+that matches the objective function gradient for $\mathbf{d}\_{k+1} = 0$ as well as $\mathbf{d}_{k+1} = - \gamma \mathbf{d}_k$. In other words, in
 our second-order approximation, we want to make sure the first-order approximation (the gradient) is accurate at our current step
 and our previous step --- this way, we can assume it isn't that far off along the distance we step. Let's look back at our approximation, 
 and let $\mathbf{B}$ be our Hessian.
 
 $$
-m_{k+1}(\mathbf{d}) = f(\mathbf{x}_{k+1}) + \nabla f(\mathbf{x}_{k+1})^\top \mathbf{d} + 0.5 \mathbf{d}^\top \mathbf{B}_{k+1} \mathbf{d}
+m_{k+1}(\mathbf{d}) = f(\mathbf{x}\_{k+1}) + \nabla f(\mathbf{x}\_{k+1})^\top \mathbf{d} + 0.5 \mathbf{d}^\top \mathbf{B}_{k+1} \mathbf{d}
 $$
 
 Take the gradient with respect to $\mathbf{d}$, and we get:
 
 $$
-\nabla m_{k+1}(\mathbf{d}) = \nabla f(\mathbf{x}_{k+1}) + \mathbf{B}_{k+1} \mathbf{d}
+\nabla m_{k+1}(\mathbf{d}) = \nabla f(\mathbf{x}\_{k+1}) + \mathbf{B}_{k+1} \mathbf{d}
 $$
 
 Substitute in our first condition, that our approximation match the gradient at the current step, we substitute $\mathbf{d} = 0$ and find:
@@ -124,13 +124,13 @@ What about the second equation? Substituting in $\mathbf{d} = - \gamma \mathbf{d
 and setting it equal to $\nabla f(\mathbf{x}_k)$, we get:
 
 $$
-\nabla m(-\gamma \mathbf{d}_{k}) = \nabla f(\mathbf{x}_k) - \gamma \mathbf{B}_{k+1} \mathbf{d}_{k} = \nabla f(\mathbf{x}_k)
+\nabla m(-\gamma \mathbf{d\}\_{k}) = \nabla f(\mathbf{x}\_k) - \gamma \mathbf{B}\_{k+1} \mathbf{d}_{k} = \nabla f(\mathbf{x}_k)
 $$
 
 We can rearrange this equation, and substitute $\gamma \mathbf{d}$ (our step) for $(\mathbf{x}_{k+1} - \mathbf{x}_k)$, to find:
 
 $$
-\mathbf{B}_{k+1} (\mathbf{x}_{k+1} - \mathbf{x}_k) = \nabla f(\mathbf{x}_{k+1}) - \nabla f(\mathbf{x}_k)
+\mathbf{B}\_{k+1} (\mathbf{x}\_{k+1} - \mathbf{x}\_k) = \nabla f(\mathbf{x}_{k+1}) - \nabla f(\mathbf{x}_k)
 $$
 
 That is, multiplying our step (the difference in position between iterations) by our approximate Hessian should give the difference in
@@ -144,8 +144,8 @@ $$
 
 In the context of optimization, this is called the **secant equation**, and is what quasi-Newton methods aim to satisfy.
 Together with the requirement that $\mathbf{B}$ be symmetric and thus $\mathbf{B} = \mathbf{B}^\top$, we have two equality constraints
-for our choice of the next matrix $\mathbf{B}_{k+1}$. To narrow our choices further, choosing a specific matrix, we'll introduce the condition
-that $\mathbf{B}$ not change too rapidly --- therefore, we'll choose $\mathbf{B}_{k+1}$ such that 
+for our choice of the next matrix $\mathbf{B}\_{k+1}$. To narrow our choices further, choosing a specific matrix, we'll introduce the condition
+that $\mathbf{B}$ not change too rapidly --- therefore, we'll choose $\mathbf{B}\_{k+1}$ such that 
 $||\mathbf{B}_{k+1} - \mathbf{B}_k||$ is minimized. Which norm we choose to use for this minimization determines the actual quasi-Newton method
 we'll end up using.
 
@@ -157,10 +157,10 @@ invert $\mathbf{B}$. If we go from one approximate-Hessian to another, we'll sti
 ourselves much time at all. Instead, it makes sense to try to sidestep this inversion altogether, and instead move from one
 approximate-inverse-Hessian to the next, given that the inverted Hessian is all we care about. 
 
-Towards that point, we'll let $\mathbf{H}_k$ represent the approximate inverse Hessian; i.e., $\mathbf{B}_{k}^{-1}$. Most of our previous 
-constraints still carry over --- $\mathbf{H}_{k+1}$ should be close to $\mathbf{H}_k$, and if $\mathbf{H}$ is 
+Towards that point, we'll let $\mathbf{H}\_k$ represent the approximate inverse Hessian; i.e., $\mathbf{B}\_{k}^{-1}$. Most of our previous 
+constraints still carry over --- $\mathbf{H}\_{k+1}$ should be close to $\mathbf{H}\_k$, and if $\mathbf{H}$ is 
 symmetric, we know $\mathbf{B}$ is symmetric as well. The one thing we need to change is our secant equation 
-$\mathbf{B}_{k+1} \mathbf{s}_k = \mathbf{y}_k$. Multiplying each side by $\mathbf{B}_{k+1}^\top = \mathbf{H}_{k+1}$, our secant equation turns
+$\mathbf{B}\_{k+1} \mathbf{s}\_k = \mathbf{y}\_k$. Multiplying each side by $\mathbf{B}\_{k+1}^\top = \mathbf{H}\_{k+1}$, our secant equation turns
 into $\mathbf{H}_{k+1} \mathbf{y}_k = \mathbf{s}_k$.
 
 Calculating a value for $\mathbf{H}_{k+1}$ therefore boils down to choosing a useful norm for the minimization. For BFGS,
