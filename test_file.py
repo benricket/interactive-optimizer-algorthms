@@ -7,13 +7,17 @@ from optimize import Optimizer
 from threading import Thread
 import time
 
+with open("writeup.md","r") as f:
+    writeup = f.read()
+
 optimizer_running = False
 optimizer_results = []
 opt = Optimizer()
 
 # Create the Dash app
 app = dash.Dash(__name__, 
-                external_stylesheets=['https://codepen.io/chriddyp/pen/bWLwgP.css'])
+                external_stylesheets=['https://codepen.io/chriddyp/pen/bWLwgP.css'],
+                )
 
 # Algorithm descriptions
 algorithm_descriptions = {
@@ -25,6 +29,7 @@ algorithm_descriptions = {
 # Layout for the app
 app.layout = html.Div([
 
+    dcc.Markdown(writeup,mathjax=True),
     # Title and toggle view button
     html.Div([
         html.H1("Interactive 3D Function Plotter", style={'margin': '0'}),
