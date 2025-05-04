@@ -124,7 +124,7 @@ What about the second equation? Substituting in $\mathbf{d} = - \gamma \mathbf{d
 and setting it equal to $\nabla f(\mathbf{x}_k)$, we get:
 
 $$
-\nabla m(-\gamma \mathbf{d\}\_{k}) = \nabla f(\mathbf{x}\_k) - \gamma \mathbf{B}\_{k+1} \mathbf{d}_{k} = \nabla f(\mathbf{x}_k)
+\nabla m(-\gamma \mathbf{d}\_{k}) = \nabla f(\mathbf{x}\_k) - \gamma \mathbf{B}\_{k+1} \mathbf{d}_{k} = \nabla f(\mathbf{x}_k)
 $$
 
 We can rearrange this equation, and substitute $\gamma \mathbf{d}$ (our step) for $(\mathbf{x}_{k+1} - \mathbf{x}_k)$, to find:
