@@ -30,6 +30,7 @@ algorithm_descriptions = {
 app.layout = html.Div([
 
     dcc.Markdown(writeup,mathjax=True),
+    
     # Title and toggle view button
     html.Div([
         html.H1("Interactive 3D Function Plotter", style={'margin': '0'}),
