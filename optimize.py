@@ -73,7 +73,6 @@ class Optimizer():
                 # Update guess
                 x = x_new
                 val = val_new
-                self.callback_newton(x,val)
                 print(f"iteration {i}")
                 
         elif method == "newton":
@@ -109,7 +108,6 @@ class Optimizer():
                 # Save the new point
                 self.x_history.append(x_new.copy())
                 self.cost_history.append(val_new)
-                self.callback_newton(x_new,val_new)
                 
                 if np.abs(val_new - val) < tol:
                     stop_attempts += 1
