@@ -195,7 +195,7 @@ The matrix $\mathbf{H}$, which needs to be stored, grows in space on the order o
 
 The limited-memory version of BFGS relies on the fact that only two vectors are used to update $\mathbf{H}$ every iteration,
 and that, from a given starting point, the state of $\mathbf{H}$ after $k$ iterations can be stored as an initial starting point plus
-$k$ occurrences of each of the update vectors. For instance, suppose our input space has 1000 dimensions. While the matrix $\mathbf{H}$
+$k$ occurrences of each of the update vectors. So, at each iteration, it runs a short "loop" using those pairs to approximate how $\mathbf{H}$ would act on any vector, giving you the curvature information you need without ever forming or storing a large matrix. For instance, suppose our input space has 1000 dimensions. While the matrix $\mathbf{H}$
 has $1000^2$ entries, we can instead start from an easy to store guess (perhaps a diagonal $\mathbf{H}_0$) and update it using a number of
 1000-element vectors. If we choose to keep only a certain amount of previous steps in history, we can significantly reduce the 
 memory usage of the algorithm. 
