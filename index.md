@@ -75,11 +75,10 @@ $$
 $$
 
 Unlike with first-order gradient descent, there's no step size parameter to set here! However, in practice,
-adding a step size factor makes the algorithm more stable, so we'll add a step size factor $\gamma$. Now, our optimization step looks
-as follows:
+adding a step size factor makes the algorithm more stable --- without it, we run into cases where, when the approximation isn't a great match for the cost function, the optimizer takes too large a step, sometimes overshooting and moving away from optimal values. To mitigate that, we'll add a step size factor $\alpha$ that can scale down our step size, and we'll calculate this using backtracking line search as we do with standard gradient descent. Now, our optimization step looks as follows:
 
 $$
-x_{k+1} = x_k - \gamma \mathbf{H}^{-1} \nabla f(\mathbf{x})
+x_{k+1} = x_k - \alpha \mathbf{H}^{-1} \nabla f(\mathbf{x})
 $$
 
 In theory, that's all there is to using Newton's method for optimization! However, it turns out that going at this calculation directly
@@ -89,7 +88,9 @@ that offer many of the same advantages.
 ## Quasi-Newton Methods
 
 Newton's method may sound great, but the issue is with the matrix inversion step. Straightforward approaches have a time complexity 
-of $O(n^3)$, and while there do exist methods for performing the inversion a bit more efficiently, it's still a very intensive
+of $O(n^3)$ --- in other words, when the number of dimensions of the input space is scaled up by a certain
+factor, the number of total operations that needs to be performed increased by that factor cubed, becoming 
+very computationally expensive very quickly. While there do exist methods for performing the inversion a bit more efficiently, it's still a very intensive
 process. For a large matrix, it isn't particularly feasible. Therefore, quasi-Newton methods are built around
 using an approximation to the inverse Hessian that can be more efficiently computed.
 
@@ -189,8 +190,7 @@ implemented in many standard optimization packages.
 ### Limited memory BFGS
 
 As a side note, the implementation of BFGS as described above can still be expensive in terms of memory.
-The matrix $\mathbf{H}$, which needs to be stored, grows in space on the order of $n^2$ for an $n$-dimensional input space,
-which, while better than growing cubically, can still be undesirable for problems with very large numbers of dimensions.
+The matrix $\mathbf{H}$, which needs to be stored, grows in space on the order of $n^2$ for an $n$-dimensional input space --- in other words, if we double the number of variables that our cost function takes, we quadruple the number of second partial derivatives that we need to store in our Hessian or inverted Hessian matrix. For problems with very large numbers of dimensions, storing all of these values in the computer memory can be difficult, and we'd prefer a way to get similar functionality to this algorithm without needing to store the same amount of information.
 
 The limited-memory version of BFGS relies on the fact that only two vectors are used to update $\mathbf{H}$ every iteration,
 and that, from a given starting point, the state of $\mathbf{H}$ after $k$ iterations can be stored as an initial starting point plus
