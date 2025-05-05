@@ -7,9 +7,6 @@ from optimize import Optimizer
 from threading import Thread
 import time
 
-with open("writeup.md","r") as f:
-    writeup = f.read()
-
 optimizer_running = False
 optimizer_results = []
 opt = Optimizer()
@@ -23,13 +20,12 @@ app = dash.Dash(__name__,
 algorithm_descriptions = {
     'gradient_descent': 'Gradient Descent is a first-order optimization algorithm that iteratively moves in the direction of steepest descent to find the minimum of a function.',
     'newton': 'Newton\'s method uses both first and second derivatives (Hessian) to find the minimum of a function. It typically converges faster than gradient descent but is more computationally intensive.',
-    'BFGS': 'BFGS (Broyden-Fletcher-Goldfarb-Shanno) is a quasi-Newton method that approximates the Hessian matrix to avoid costly second derivative calculations.'
+    'BFGS': 'BFGS (Broyden-Fletcher-Goldfarb-Shanno) is a quasi-Newton method that approximates the Hessian matrix to avoid costly second derivative calculations.',
+    'trust-constr': 'trust-constr is a method that uses a quasi-Newton method to cheaply approximate the Hessian matrix while also restricting optimizer steps to be within a trusted region.'
 }
 
 # Layout for the app
 app.layout = html.Div([
-
-    dcc.Markdown(writeup,mathjax=True),
     
     # Title and toggle view button
     html.Div([
@@ -63,7 +59,8 @@ app.layout = html.Div([
                 options=[
                     {'label': 'Gradient Descent', 'value': 'gradient_descent'},
                     {'label': 'Newton\'s Method', 'value': 'newton'},
-                    {'label': 'BFGS', 'value': 'BFGS'}
+                    {'label': 'BFGS', 'value': 'BFGS'},
+                    {'label': 'trust-constr', 'value': 'trust-constr'}
                 ],
                 value='BFGS',
                 style={'width': '100%', 'marginBottom': '10px'}
@@ -119,12 +116,11 @@ app.layout = html.Div([
                     options=[
                         {'label': 'Rosenbrock', 'value': 'rosenbrock'},
                         {'label': 'Sphere', 'value': 'sphere'},
-                        {'label': 'Rastrigin', 'value': 'rastrigin'}
                     ],
                     value='rosenbrock'
                 ),
                 html.Label("Tolerance:"),
-                dcc.Input(id='tolerance', type='number', value=1e-6, step=1e-7),
+                dcc.Input(id='tolerance', type='number', value=1e-3, step=1e-7),
 
                 html.Label("Max Iterations:"),
                 dcc.Input(id='max-iterations', type='number', value=100, min=1),
