@@ -13,6 +13,16 @@
 
 \begin{document}
 
+\section{Teach-In Project Deliverable}
+
+Our learning goal was to understand why optimization algorithms like quasi-Newton methods are often 
+better in practice than simple gradient descent, understand the theory behind approximating a cost function
+via Newton's method (and the approximation to allow the Hessian computation to be easier), and understand 
+
+\subsection{Summary of Learning}
+
+\subsection{Interactive Activity Documentation}
+
 \section{Optimization algorithms}
 
 \subsection{Gradient Descent}
@@ -69,8 +79,10 @@ that offer many of the same advantages.
 \subsection{Quasi-Newton Methods}
 
 Newton's method may sound great, but the issue is with the matrix inversion step. Straightforward approaches have a time complexity 
-of \(O(n^3)\), and while there do exist methods for performing the inversion a bit more efficiently, it's still a very intensive
-process. For a large matrix, it isn't particularly feasible. Therefore, quasi-Newton methods are built around
+of \(O(n^3)\) --- in other words, when the number of dimensions of the input space is scaled up by a certain
+factor, the number of total operations that needs to be performed increased by that factor cubed, becoming 
+very computationally expensive very quickly. While there do exist methods for performing the inversion a bit more efficiently, it's still a very intensive
+process. Therefore, quasi-Newton methods are built around
 using an approximation to the inverse Hessian that can be more efficiently computed.
 
 A reasonable goal for these methods is that the objective function approximation match the gradient of the objective function both
@@ -123,7 +135,10 @@ the norm chosen is called a weighted Frobenius norm. Whereas a Frobenius norm is
 simply consists of summing all the squared values of each element in the matrix, the weighted Frobenius norm 
 left and right multiplies the matrix by a consciously chosen matrix of weights before computing the Frobenius norm.
 
-Carefully choosing this weight yields an update step that depends only on \(\mathbf{y}_k\), \(\mathbf{s}_k\), and \(\mathbf{H}_k\):
+The actual math involved in choosing a set of weights is a bit outside the scope of this project, though the essence of it boils down to solving a constrained optimization problem via a vector of 
+Lagrange multipliers. If you're curious about how the actual update step is derived, an in-depth explanation can be found on \href{https://ocw.mit.edu/courses/18-335j-introduction-to-numerical-methods-spring-2019/1b52b607c223977b35ba1d826e4d8df1_MIT18_335JS19_lec30.pdf}{MIT OpenCourseWare}.
+
+For BFGS, the update step only ends up depending on \(\mathbf{y}_k\), \(\mathbf{s}_k\), and \(\mathbf{H}_k\):
 \[\mathbf{H}_{k+1} = (\mathrm{I} - \rho_k \mathbf{s}_k \mathbf{y}_k^\top)\mathbf{H}_k(\mathrm{I} - \rho_k \mathbf{y}_k \mathbf{s}_k^\top) + \rho_k \mathbf{s}_k \mathbf{s}_k^\top\]
 \[\rho_k = \frac{1}{\mathbf{y}_k^\top \mathbf{s}_k}\]
 This can be shown to satisfy the secant equation --- multiplying by \(\mathbf{y}_k\) reduces the right term to \(\mathbf{s}_k\)
