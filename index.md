@@ -167,9 +167,10 @@ into $\mathbf{H}_{k+1} \mathbf{y}_k = \mathbf{s}_k$.
 Calculating a value for $\mathbf{H}_{k+1}$ therefore boils down to choosing a useful norm for the minimization. For BFGS,
 the norm chosen is called a weighted Frobenius norm. Whereas a Frobenius norm is analogous to a Euclidean norm for a matrix, and
 simply consists of summing all the squared values of each element in the matrix, the weighted Frobenius norm 
-left and right multiplies the matrix by a consciously chosen matrix of weights before computing the Frobenius norm.
+left and right multiplies the matrix by a consciously chosen matrix of weights before computing the Frobenius norm. The actual math involved in choosing a set of weights is a bit outside the scope of this project, though the essence of it boils down to solving a constrained optimization problem via a vector of 
+Lagrange multipliers. If you're curious about how the actual update step is derived, an in-depth explanation can be found on [MIT OpenCourseWare](https://ocw.mit.edu/courses/18-335j-introduction-to-numerical-methods-spring-2019/1b52b607c223977b35ba1d826e4d8df1_MIT18_335JS19_lec30.pdf).
 
-Carefully choosing this weight yields an update step that depends only on $\mathbf{y}_k$, $\mathbf{s}_k$, and $\mathbf{H}_k$:
+For BFGS, the update step only ends up depending on $\mathbf{y}_k$, $\mathbf{s}_k$, and $\mathbf{H}_k$:
 
 $$
 \mathbf{H}_{k+1} = (\mathrm{I} - \rho_k \mathbf{s}_k \mathbf{y}_k^\top)\mathbf{H}_k(\mathrm{I} - \rho_k \mathbf{y}_k \mathbf{s}_k^\top) + \rho_k \mathbf{s}_k \mathbf{s}_k^\top
