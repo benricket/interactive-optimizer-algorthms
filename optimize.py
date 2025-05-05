@@ -38,7 +38,7 @@ class Optimizer():
         if method == "gradient_descent":
             x = np.array(x0)
             val = fun(x)
-            alpha = 0.01  # Learning rate
+            alpha = 0.001  # Learning rate
             stop_attempts = 0
             
             for i in range(options["maxiter"]):
@@ -47,7 +47,7 @@ class Optimizer():
                 
                 # Perform line search to get step size alpha
                 search = scipy.optimize.line_search(fun, lambda x: scipy.optimize.approx_fprime(x, fun, 1e-8), x, -grad)
-                alpha = search[0] if search[0] is not None else 1e-2  # fallback alpha
+                alpha = search[0] if search[0] is not None else 1e-3  # fallback alpha
                 
                 x_new = x - alpha * grad # ADD LINE SEARCH TO GET STEP SIZE
                 val_new = fun(x_new)
@@ -65,10 +65,10 @@ class Optimizer():
                     stop_attempts = 0
                 
                 # Adaptive learning rate (optional)
-                if val_new > val:
-                    alpha *= 0.5  # Reduce step size if we're not improving
-                elif stop_attempts > 0:
-                    alpha *= 0.9  # Gently reduce as we approach minimum
+                #if val_new > val:
+                #    alpha *= 0.5  # Reduce step size if we're not improving
+                #elif stop_attempts > 0:
+                #    alpha *= 0.9  # Gently reduce as we approach minimum
                 
                 # Update guess
                 x = x_new
@@ -99,7 +99,7 @@ class Optimizer():
                 # Perform Newton's method
                 #gamma = 0.5
 
-                search = scipy.optimize.line_search(fun, lambda x: scipy.optimize.approx_fprime(x, fun, 1e-8), x, -grad)
+                search = scipy.optimize.line_search(fun, lambda x: scipy.optimize.approx_fprime(x, fun, 1e-8), x, -hess_inv@grad)
                 alpha = search[0] if search[0] is not None else 1e-2
 
                 x_new = x - alpha * hess_inv @ grad

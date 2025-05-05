@@ -34,6 +34,14 @@ app.layout = html.Div([
         html.Button("Switch View", id='toggle-view', n_clicks=0)
     ], style={'display': 'flex', 'justifyContent': 'space-between', 'alignItems': 'center', 'marginBottom': '20px'}),
 
+    de.EventListener(
+                        id='listener',
+                        events=[{'event': 'keydown', 'props': ['key']}],
+                        logging=True,
+                        style={'width': '100%', 'height': '100%', 'position': 'absolute', 'top': 0, 'left': 0, 'zIndex': 1, 'pointerEvents': 'none'},
+                        children=[html.Div(id="keyboard-container", tabIndex=0, style={"outline": "none"})]
+                    ),
+
     dcc.Interval(id='update-interval', interval=1000, n_intervals=0),
     dcc.Store(id='view-mode', data='surface'),
     dcc.Store(id='heatmap',data=[[0]]),
@@ -48,13 +56,7 @@ app.layout = html.Div([
             html.Div([
                 # LEFT SIDE - Plot area
                 html.Div([
-                    de.EventListener(
-                        id='listener',
-                        events=[{'event': 'keydown', 'props': ['key']}],
-                        logging=True,
-                        style={'width': '100%', 'height': '100%', 'position': 'absolute', 'top': 0, 'left': 0, 'zIndex': 1, 'pointerEvents': 'none'},
-                        children=[html.Div(id="keyboard-container", tabIndex=0, style={"outline": "none"})]
-                    ),
+                    
                     dcc.Graph(id='surface-plot', style={'height': '70vh', 'width': '100%', 'position': 'relative', 'zIndex': 2}),
                 ], id='first-view', style={'height': '70vh', 'width': '60%', 'display': 'inline-block', 'position': 'relative', 'verticalAlign': 'top'}),
                 
@@ -65,6 +67,8 @@ app.layout = html.Div([
                         html.Div("We've written a guide on how the optimization algorithms are implemented mathematically here.",style={'textAlign':'center'}),
                         href="https://benricket.github.io/interactive-optimizer-algorthms/",target='_blank'
                     ),
+                    html.Div("You can change the function and the range displayed in the text boxes below. To test a point, click \"Update Plot\", and \
+                             then press the spacebar when hovering over any point on the function.\n",style={'textAlign':'center'}),
                     html.Label("Select Algorithm:"),
                     dcc.Dropdown(
                         id='algorithm-dropdown',
@@ -106,14 +110,14 @@ app.layout = html.Div([
                             })
                         )
                     ]),
-                    html.P("Select an optimization algorithm above and initial conditions below. Hover over the surface and press SPACE to set a starting point for optimization. Then, you will see the optimization path with select points when optimization is complete. If there are issues, try updating the plot, or pressing SPACE twice. For more information, checkout https://benricket.github.io/interactive-optimizer-algorthms/",
-                           style={'fontSize': '12px', 'marginTop': '10px', 'fontStyle': 'italic', 'color': '#666'})
                 ], style={'height': '70vh', 'width': '38%', 'display': 'inline-block', 'verticalAlign': 'top', 
                         'marginLeft': '2%', 'position': 'relative', 'zIndex': 5}),
             ], style={'width': '100%', 'marginBottom': '20px'}),
-            
+            html.Div(style={'height': '200px'}),
             # BOTTOM SECTION - Function parameters
             html.Div([
+                html.P("Select an optimization algorithm above and initial conditions below. Hover over the surface and press SPACE to set a starting point for optimization. You will see the optimization path with select points when optimization is complete. If there are issues, try updating the plot, or pressing SPACE twice. For more information, checkout https://benricket.github.io/interactive-optimizer-algorthms/",
+                           style={'fontSize': '12px', 'marginTop': '10px', 'fontStyle': 'italic', 'color': '#333'}),
                 html.Hr(style={'margin': '10px 0', 'borderTop': '1px solid #ccc'}),
                 html.Div([
                     html.Div([
@@ -736,7 +740,7 @@ def start_optimizer_heatmap(n_clicks, function_type, tol, max_iter, num_dims, al
     if not optimizer_running:
         optimizer_results = []
 
-        x0 = np.random.uniform(low=-5, high=5, size=(num_dims))
+        x0 = np.random.uniform(low=-3, high=3, size=(num_dims))
         params = {
             "method": algorithm,
             "max_iters": max_iter,
@@ -770,9 +774,10 @@ def start_optimizer_heatmap(n_clicks, function_type, tol, max_iter, num_dims, al
     [Output('optimizer-progress-1','figure'),
      Output('optimizer-progress-2', 'figure')],
      Input('update-interval','n_intervals'),
-     State('num-dimensions','value')
+     State('num-dimensions','value'),
+     State('function-selector','value')
 )
-def display_heatmap(n_intervals,num_dims):
+def display_heatmap(n_intervals,num_dims,func_select):
 
     x_history = opt.x_history
     if x_history is None or len(x_history) == 0:
@@ -789,7 +794,12 @@ def display_heatmap(n_intervals,num_dims):
     else:
         heatmap = np.array(x_history)
         print(f"heatmap shape: {heatmap.shape}")
-        optimum = np.zeros((1,heatmap.shape[1]))
+        if func_select != "rosenbrock":
+            optimum = np.zeros((1,heatmap.shape[1]))
+            print(optimum)
+        else:
+            optimum = np.ones((1,heatmap.shape[1]))
+            print(optimum)
         distances = np.abs(heatmap - optimum)
 
         fig1 = go.Figure(data=[go.Heatmap(z=distances, colorscale='Viridis')])
