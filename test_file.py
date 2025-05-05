@@ -6,10 +6,12 @@ import numpy as np
 from optimize import Optimizer
 from threading import Thread
 import time
+import sympy as sp
 
 optimizer_running = False
 optimizer_results = []
 opt = Optimizer()
+x, y = sp.symbols('x y')
 
 # Create the Dash app
 app = dash.Dash(__name__, 
@@ -49,7 +51,9 @@ app.layout = html.Div([
                     de.EventListener(
                         id='listener',
                         events=[{'event': 'keydown', 'props': ['key']}],
-                        style={'width': '100%', 'height': '100%', 'position': 'absolute', 'top': 0, 'left': 0, 'zIndex': 1, 'pointerEvents': 'none'}
+                        logging=True,
+                        style={'width': '100%', 'height': '100%', 'position': 'absolute', 'top': 0, 'left': 0, 'zIndex': 1, 'pointerEvents': 'none'},
+                        children=[html.Div(id="keyboard-container", tabIndex=0, style={"outline": "none"})]
                     ),
                     dcc.Graph(id='surface-plot', style={'height': '70vh', 'width': '100%', 'position': 'relative', 'zIndex': 2}),
                 ], id='first-view', style={'height': '70vh', 'width': '60%', 'display': 'inline-block', 'position': 'relative', 'verticalAlign': 'top'}),
@@ -57,6 +61,10 @@ app.layout = html.Div([
                 # RIGHT SIDE - Control panel
                 html.Div([
                     html.H3("Optimization Settings", style={'textAlign': 'center', 'marginTop': '0', 'marginBottom': '10px'}),
+                    html.A(
+                        html.Div("We've written a guide on how the optimization algorithms are implemented mathematically here.",style={'textAlign':'center'}),
+                        href="https://benricket.github.io/interactive-optimizer-algorthms/",target='_blank'
+                    ),
                     html.Label("Select Algorithm:"),
                     dcc.Dropdown(
                         id='algorithm-dropdown',
@@ -211,6 +219,10 @@ app.layout = html.Div([
                     the selected optimization algorithm will run on the selected test function in the given number of dimensions with random starting points. \
                     Every column of the heatmap below represents a variable, and every row represents a single optimizer guess. Lower \
                     values indicate the value is closer to its ideal value at the nearest local optimum.", style={"fontSize": "14px","text-align":"center"}),
+            html.A(
+                        html.Div("We've written a guide on how the optimization algorithms are implemented mathematically here.",style={'textAlign':'center'}),
+                        href="https://benricket.github.io/interactive-optimizer-algorthms/",target='_blank'
+                    ),
 
             html.Div([
                 dcc.Graph(id='optimizer-progress-1', style={'width': '50%'}),
@@ -280,13 +292,15 @@ def interpolate_path_on_surface(path, function_string, num_points=10):
             t = j / num_points
             
             # Interpolate x and y
-            x = p1[0] * (1 - t) + p2[0] * t
-            y = p1[1] * (1 - t) + p2[1] * t
+            x_pt = p1[0] * (1 - t) + p2[0] * t
+            y_pt = p1[1] * (1 - t) + p2[1] * t
             
             # Calculate z value from function
             try:
-                z = eval(function_string, {"x": x, "y": y, "np": np})
-                smooth_path.append([x, y, z])
+                expr = sp.sympify(function_string)
+                cost_fun = sp.lambdify((x, y), expr, modules=["numpy"])
+                z = cost_fun(x_pt,y_pt)
+                smooth_path.append([x_pt, y_pt, z])
             except:
                 # Skip this point if function evaluation fails
                 continue
@@ -324,12 +338,14 @@ def update_graph(n_clicks, saved_points, optimization_results, x_range_str, y_ra
         x_min, x_max = -2, 4
         y_min, y_max = -1, 5
     
-    x = np.linspace(x_min, x_max, 50)
-    y = np.linspace(y_min, y_max, 50)
-    X, Y = np.meshgrid(x, y)
+    xrange = np.linspace(x_min, x_max, 50)
+    yrange = np.linspace(y_min, y_max, 50)
+    X, Y = np.meshgrid(xrange, yrange)
     
     try:
-        Z = eval(function_string, {"x": X, "y": Y, "np": np})
+        expr = sp.sympify(function_string)
+        cost_fun = sp.lambdify((x, y), expr, modules=["numpy"])
+        Z = cost_fun(X,Y)
     except:
         Z = np.zeros_like(X)
     
@@ -339,7 +355,9 @@ def update_graph(n_clicks, saved_points, optimization_results, x_range_str, y_ra
         if (x_min <= point[0] <= x_max and y_min <= point[1] <= y_max):
             # Recalculate z-value for the point based on current function
             try:
-                z_val = eval(function_string, {"x": point[0], "y": point[1], "np": np})
+                expr = sp.sympify(function_string)
+                cost_fun = sp.lambdify((x, y), expr, modules=["numpy"])
+                z_val = cost_fun(point[0],point[1])
                 filtered_points.append([point[0], point[1], z_val])
             except:
                 # If there's an error evaluating the function, skip this point
@@ -349,8 +367,8 @@ def update_graph(n_clicks, saved_points, optimization_results, x_range_str, y_ra
     # Create the surface plot
     surface = go.Surface(
         z=Z, 
-        x=x, 
-        y=y, 
+        x=X, 
+        y=Y, 
         colorscale='Viridis',
         lighting=dict(ambient=0.7, diffuse=0.5, roughness=0.5, specular=0.2),
         lightposition=dict(x=0, y=0, z=100000),
@@ -569,8 +587,10 @@ def save_point_and_optimize(event, n_clicks, hovered_point, saved_points,
             try:
                 # Create a function that only depends on x,y (2D vector)
                 def cost_function(xy):
-                    x, y = xy
-                    return eval(function_string, {"x": x, "y": y, "np": np})
+                    x_in, y_in = xy
+                    expr = sp.sympify(function_string)
+                    cost_fun = sp.lambdify((x, y), expr, modules=["numpy"])
+                    return cost_fun(x_in, y_in)
                 
                 # Set parameters for optimization
                 try:
@@ -625,7 +645,7 @@ def save_point_and_optimize(event, n_clicks, hovered_point, saved_points,
         return saved_points, optimization_results, dash.no_update
     
     # Handle space key press to save point and run optimization
-    if trigger_id == 'listener' and event and event.get('key') == ' ' and hovered_point:
+    if trigger_id == 'listener' and event and event.get('key') == 'w' and hovered_point:
         print("Space key pressed and hovered point exists")  # Debug print
         
         # Make sure we have all three coordinates
@@ -638,8 +658,10 @@ def save_point_and_optimize(event, n_clicks, hovered_point, saved_points,
             try:
                 # Create a function that only depends on x,y (2D vector)
                 def cost_function(xy):
-                    x, y = xy
-                    return eval(function_string, {"x": x, "y": y, "np": np})
+                    x_in, y_in = xy
+                    expr = sp.sympify(function_string)
+                    cost_fun = sp.lambdify((x, y), expr, modules=["numpy"])
+                    return cost_fun(x_in, y_in)
                 
                 # Get starting point (x,y)
                 start_point = [hovered_point[0], hovered_point[1]]
