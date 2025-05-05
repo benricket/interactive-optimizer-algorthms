@@ -17,9 +17,36 @@
 
 Our learning goal was to understand why optimization algorithms like quasi-Newton methods are often 
 better in practice than simple gradient descent, understand the theory behind approximating a cost function
-via Newton's method (and the approximation to allow the Hessian computation to be easier), and understand 
+via Newton's method (and the approximation to allow the Hessian computation to be easier), and understand in what 
+cases different Newton or quasi-Newton optimization algorithms can perform well, and in what cases they perform poorly.
+This extends our knowledge about linear approximations, gradients, and gradient descent, all of which we covered
+in QEA.
 
 \subsection{Summary of Learning}
+
+We learned that the primary rationale behind Newton's method in optimization is that, by constructing a 
+second-order rather than first-order approximation, more information about the cost function's local behavior
+can be captured, and thus the optimization can take better steps and converge faster. We then learned that the reason
+exact Newton's method is rarely used for optimization is because the inverted Hessian matrix, used in the update step, is
+computationally expensive to calculate, with the inversion scaling with \(O(n^3)\). Therefore, quasi-Newton methods rely
+on iteratively updating an approximate inverted Hessian matrix, ensuring the approximation satisfies certain conditions
+(being equal to the actual function gradient for the two most recent steps) while skipping the time-intensive steps.
+
+We specifically looked at the update steps for two different quasi-Newton methods, BFGS and SR1. While the actual derivation
+of the update steps seemed outside of the immediate scope of our project, we learned that both of them begin by satisfying the condition
+that the approximate inverse Hessian be symmetric, that it give the iteration step vector when multiplying the difference in gradient
+value between steps, and that after satisfying these constraints, the difference in the matrix between iterations be minimized according
+to a specifically chosen norm. We verified that the BFGS update satisfied these constraints, though we didn't go into the actual update 
+step derivation.
+
+We also explored how limited-memory BFGS can give improvements in memory requirements by storing the vectors required to update 
+the approximate inverse Hessian for a number of iterations, rather than storing the whole matrix directly in memory.
+
+Finally, we learned about the conditions under which some of these methods perform well and others perform poorly.
+For instance, BFGS performs well for convex functions, but is unable to account for negative curvature. SR1 can represent 
+negative curvature, but can be less stable between iterations due to the term in the denominator, and is therefore typically 
+only implemented in methods that mitigate this risk (i.e. trust region methods, which restrict the potential update space to 
+a space within a certain radius.)
 
 \subsection{Interactive Activity Documentation}
 
@@ -136,7 +163,8 @@ simply consists of summing all the squared values of each element in the matrix,
 left and right multiplies the matrix by a consciously chosen matrix of weights before computing the Frobenius norm.
 
 The actual math involved in choosing a set of weights is a bit outside the scope of this project, though the essence of it boils down to solving a constrained optimization problem via a vector of 
-Lagrange multipliers. If you're curious about how the actual update step is derived, an in-depth explanation can be found on \href{https://ocw.mit.edu/courses/18-335j-introduction-to-numerical-methods-spring-2019/1b52b607c223977b35ba1d826e4d8df1_MIT18_335JS19_lec30.pdf}{MIT OpenCourseWare}.
+Lagrange multipliers. If you're curious about how the actual update step is derived, an in-depth explanation can be found 
+on \href{https://ocw.mit.edu/courses/18-335j-introduction-to-numerical-methods-spring-2019/1b52b607c223977b35ba1d826e4d8df1_MIT18_335JS19_lec30.pdf}{MIT OpenCourseWare}.\cite{johnson-quasi-newton}
 
 For BFGS, the update step only ends up depending on \(\mathbf{y}_k\), \(\mathbf{s}_k\), and \(\mathbf{H}_k\):
 \[\mathbf{H}_{k+1} = (\mathrm{I} - \rho_k \mathbf{s}_k \mathbf{y}_k^\top)\mathbf{H}_k(\mathrm{I} - \rho_k \mathbf{y}_k \mathbf{s}_k^\top) + \rho_k \mathbf{s}_k \mathbf{s}_k^\top\]
